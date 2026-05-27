@@ -259,6 +259,48 @@ body.hov #cur-r{width:60px;height:60px;border-color:var(--teal)}
 .ct-form-wrap h3 em{font-style:italic;color:var(--teal)}
 .ct-form-wrap > p{font-size:13.5px;color:var(--dim);margin-bottom:28px}
 
+/* ═══ INNOVATION GRADIENT ═══ */
+.hero-h .ot{
+  color:transparent;font-style:italic;font-weight:400;
+  background:linear-gradient(90deg,#DCF1DD,#29BE9C,#02686F,#29BE9C,#DCF1DD);
+  background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-stroke:0px transparent;
+  animation:grad 6s ease-in-out infinite;
+}
+@keyframes grad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+/* ═══ GLASSMORPHISM PILLARS ═══ */
+.p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:transparent;border:none;border-radius:0;overflow:visible}
+.p-cell{
+  background:rgba(7,12,12,.5);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(41,190,156,.10);
+  border-radius:16px;padding:36px 32px;position:relative;
+  display:flex;flex-direction:column;gap:14px;min-height:240px;cursor:none;
+  transition:background .4s,border-color .4s,transform .45s cubic-bezier(.16,1,.3,1),box-shadow .4s;
+  overflow:hidden;
+}
+.p-cell::before{
+  content:'';position:absolute;inset:0;border-radius:16px;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(41,190,156,.14),transparent 65%);
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.p-cell::after{
+  content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(41,190,156,.22),transparent);
+  pointer-events:none;
+}
+.p-cell:hover::before{opacity:1}
+.p-cell:hover{
+  background:rgba(41,190,156,.06);
+  border-color:rgba(41,190,156,.28);
+  transform:translateY(-5px);
+  box-shadow:0 20px 52px rgba(0,0,0,.5),inset 0 1px 0 rgba(41,190,156,.14);
+}
+.btn-p,.top-cta,.btn-g{will-change:transform}
+.top-r a{display:inline-block;will-change:transform}
+
 @media(max-width:1024px){
   .p-grid{grid-template-columns:repeat(2,1fr)}
   .who-row{grid-template-columns:80px 56px 1fr;gap:20px;padding:24px 8px}
@@ -631,39 +673,57 @@ body.hov #cur-r{width:60px;height:60px;border-color:var(--teal)}
 </div>
 
 <script>
-/* ─── Three-free interactive node network on a canvas ─── */
-/* Particles connect with lines like a community graph. Reacts to cursor + scroll. */
+/* ─── REBUILT NETWORK BACKGROUND ─── */
 (function(){
   const cv = document.getElementById('bg');
   const ctx = cv.getContext('2d');
-  let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1, 2);
+  let W=0, H=0, DPR=Math.min(window.devicePixelRatio||1, 2);
+
   function size(){
-    W=cv.width=Math.floor(innerWidth*DPR);
-    H=cv.height=Math.floor(innerHeight*DPR);
-    cv.style.width=innerWidth+'px';
-    cv.style.height=innerHeight+'px';
+    W = cv.width  = Math.floor(innerWidth  * DPR);
+    H = cv.height = Math.floor(innerHeight * DPR);
+    cv.style.width  = innerWidth  + 'px';
+    cv.style.height = innerHeight + 'px';
   }
-  size(); window.addEventListener('resize', ()=>{size(); seed();}, {passive:true});
+  size();
+  window.addEventListener('resize', ()=>{ size(); seed(); }, {passive:true});
 
-  let nodes=[];
   const isMobile = innerWidth < 768;
-  const COUNT = isMobile ? 38 : 80;
-  const LINK_DIST = isMobile ? 130*DPR : 170*DPR;
+  const BASE = isMobile ? 32 : 70;
 
+  // Node types: 0=peripheral, 1=mid, 2=hub
+  function makeNode(type){
+    const cfg = [
+      {rMin:.4,rMax:.9, vScale:.18, alpha:.25, linkAlpha:.12},
+      {rMin:.8,rMax:1.6, vScale:.14, alpha:.40, linkAlpha:.20},
+      {rMin:1.8,rMax:2.8, vScale:.07, alpha:.70, linkAlpha:.35},
+    ][type];
+    return {
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-.5)*cfg.vScale*DPR,
+      vy: (Math.random()-.5)*cfg.vScale*DPR,
+      r:  (cfg.rMin + Math.random()*(cfg.rMax-cfg.rMin)) * DPR,
+      ph: Math.random()*Math.PI*2,
+      type, alpha:cfg.alpha, linkAlpha:cfg.linkAlpha,
+      pulseT:0, pulseActive:false, pulseR:0,
+    };
+  }
+
+  let nodes = [];
   function seed(){
     nodes = [];
-    for(let i=0;i<COUNT;i++){
-      nodes.push({
-        x: Math.random()*W,
-        y: Math.random()*H,
-        vx: (Math.random()-.5)*0.25*DPR,
-        vy: (Math.random()-.5)*0.25*DPR,
-        r: (Math.random()*1.2 + 0.6) * DPR,
-        ph: Math.random()*Math.PI*2,
-      });
-    }
+    const nHubs = isMobile ? 2 : 4;
+    const nMid  = isMobile ? 8 : 16;
+    const nPerif = BASE - nHubs - nMid;
+    for(let i=0;i<nHubs;i++)  nodes.push(makeNode(2));
+    for(let i=0;i<nMid;i++)   nodes.push(makeNode(1));
+    for(let i=0;i<nPerif;i++) nodes.push(makeNode(0));
+    // Stagger hub pulse starts
+    nodes.filter(n=>n.type===2).forEach((n,i)=>{ n.pulseT = i * 1.8; });
   }
   seed();
+
+  const LINK_DIST_BASE = isMobile ? 110 : 160;
 
   let mx=-9999, my=-9999, tmx=-9999, tmy=-9999;
   window.addEventListener('mousemove', e=>{
@@ -671,78 +731,141 @@ body.hov #cur-r{width:60px;height:60px;border-color:var(--teal)}
   }, {passive:true});
   window.addEventListener('mouseleave', ()=>{ tmx=-9999; tmy=-9999; }, {passive:true});
 
-  let t=0;
+  // Scroll density: more connections visible lower on page
+  let scrollFactor = 1;
+  window.addEventListener('scroll', ()=>{
+    const pct = Math.min(1, scrollY / (document.body.scrollHeight - innerHeight || 1));
+    scrollFactor = 1 + pct * 0.6; // up to 60% more reach at bottom
+  }, {passive:true});
+
+  let t = 0;
   function frame(){
     requestAnimationFrame(frame);
-    t += 0.005;
-    mx += (tmx-mx)*0.12;
-    my += (tmy-my)*0.12;
+    t += 0.004;
+    mx += (tmx-mx) * 0.1;
+    my += (tmy-my) * 0.1;
     ctx.clearRect(0,0,W,H);
 
-    // Subtle radial vignette glow at cursor
+    const LINK_DIST = LINK_DIST_BASE * DPR * scrollFactor;
+
+    // Cursor glow
     if(tmx > -9000){
-      const grd = ctx.createRadialGradient(mx,my,0, mx,my, 220*DPR);
-      grd.addColorStop(0,'rgba(41,190,156,0.06)');
+      const grd = ctx.createRadialGradient(mx,my,0, mx,my, 280*DPR);
+      grd.addColorStop(0,'rgba(41,190,156,0.07)');
       grd.addColorStop(1,'rgba(41,190,156,0)');
       ctx.fillStyle = grd;
       ctx.fillRect(0,0,W,H);
     }
 
-    // Update + draw nodes
-    for(let i=0;i<nodes.length;i++){
-      const n=nodes[i];
-      // drift
-      n.x += n.vx + Math.sin(t+n.ph)*0.08*DPR;
-      n.y += n.vy + Math.cos(t*0.8+n.ph)*0.08*DPR;
-      // mouse repel softly
-      const dx=n.x-mx, dy=n.y-my;
-      const d2 = dx*dx+dy*dy;
-      if(d2 < (120*DPR)*(120*DPR) && tmx>-9000){
-        const d = Math.sqrt(d2)+0.001;
-        const f = (1 - d/(120*DPR)) * 0.6;
-        n.x += (dx/d)*f*DPR;
-        n.y += (dy/d)*f*DPR;
-      }
-      // wrap
-      if(n.x<-20*DPR) n.x = W+20*DPR;
-      if(n.x>W+20*DPR) n.x = -20*DPR;
-      if(n.y<-20*DPR) n.y = H+20*DPR;
-      if(n.y>H+20*DPR) n.y = -20*DPR;
+    // Subtle ambient glow around hub nodes
+    nodes.filter(n=>n.type===2).forEach(n=>{
+      const grd = ctx.createRadialGradient(n.x,n.y,0, n.x,n.y, 80*DPR);
+      grd.addColorStop(0,'rgba(41,190,156,0.05)');
+      grd.addColorStop(1,'rgba(41,190,156,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0,0,W,H);
+    });
 
-      // draw node
-      const closeM = tmx>-9000 ? Math.max(0, 1 - Math.sqrt(d2)/(200*DPR)) : 0;
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r + closeM*1.5*DPR, 0, Math.PI*2);
-      ctx.fillStyle = closeM>0 ? `rgba(41,190,156,${0.45+closeM*0.4})` : 'rgba(41,190,156,0.32)';
-      ctx.fill();
-    }
-
-    // Lines between nearby nodes
+    // Lines first (drawn behind nodes)
     for(let i=0;i<nodes.length;i++){
       for(let j=i+1;j<nodes.length;j++){
         const a=nodes[i], b=nodes[j];
         const dx=a.x-b.x, dy=a.y-b.y;
-        const d2 = dx*dx+dy*dy;
-        if(d2 < LINK_DIST*LINK_DIST){
+        const d2=dx*dx+dy*dy;
+        const LD = LINK_DIST * (a.type===2||b.type===2 ? 1.4 : 1);
+        if(d2 < LD*LD){
           const d=Math.sqrt(d2);
-          let alpha = (1 - d/LINK_DIST) * 0.20;
-          // amplify near cursor
+          const baseAlpha = Math.max(a.linkAlpha, b.linkAlpha);
+          let alpha = baseAlpha * (1 - d/LD);
+          // cursor amplification
           if(tmx>-9000){
-            const mxm = (a.x+b.x)/2 - mx;
-            const mym = (a.y+b.y)/2 - my;
-            const md2 = mxm*mxm+mym*mym;
-            if(md2 < (220*DPR)*(220*DPR)){
-              alpha += (1 - Math.sqrt(md2)/(220*DPR)) * 0.35;
-            }
+            const midX=(a.x+b.x)/2-mx, midY=(a.y+b.y)/2-my;
+            const md2=midX*midX+midY*midY;
+            const CR=260*DPR;
+            if(md2<CR*CR) alpha += (1-Math.sqrt(md2)/CR)*0.30;
           }
+          alpha = Math.min(0.55, alpha);
           ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(41,190,156,${Math.min(0.55,alpha)})`;
-          ctx.lineWidth = 1;
+          ctx.moveTo(a.x,a.y);
+          ctx.lineTo(b.x,b.y);
+          ctx.strokeStyle = `rgba(41,190,156,${alpha})`;
+          ctx.lineWidth = (a.type===2||b.type===2) ? 1.5 : 1;
           ctx.stroke();
         }
       }
+    }
+
+    // Update + draw nodes
+    for(let i=0;i<nodes.length;i++){
+      const n=nodes[i];
+      // Drift
+      n.x += n.vx + Math.sin(t + n.ph) * 0.06 * DPR;
+      n.y += n.vy + Math.cos(t*0.7 + n.ph) * 0.06 * DPR;
+      // Cursor attraction for hubs, repel for others
+      const dx=n.x-mx, dy=n.y-my;
+      const d2=dx*dx+dy*dy;
+      if(d2 < (180*DPR)*(180*DPR) && tmx>-9000){
+        const d=Math.sqrt(d2)+.001;
+        if(n.type===2){
+          // hubs gently attract to cursor
+          const f = (1 - d/(180*DPR)) * 0.3;
+          n.x -= (dx/d)*f*DPR;
+          n.y -= (dy/d)*f*DPR;
+        } else {
+          // others repel
+          const f = (1 - d/(180*DPR)) * 0.5;
+          n.x += (dx/d)*f*DPR;
+          n.y += (dy/d)*f*DPR;
+        }
+      }
+      // Wrap
+      if(n.x<-30*DPR) n.x=W+30*DPR;
+      if(n.x>W+30*DPR) n.x=-30*DPR;
+      if(n.y<-30*DPR) n.y=H+30*DPR;
+      if(n.y>H+30*DPR) n.y=-30*DPR;
+
+      // Hub pulse ring
+      if(n.type===2){
+        n.pulseT += 0.016;
+        if(n.pulseT > 4){
+          n.pulseT = 0;
+          n.pulseActive = true;
+          n.pulseR = n.r;
+        }
+        if(n.pulseActive){
+          n.pulseR += 1.8*DPR;
+          const pa = Math.max(0, 0.35 - n.pulseR/(160*DPR));
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.pulseR, 0, Math.PI*2);
+          ctx.strokeStyle = `rgba(41,190,156,${pa})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          if(n.pulseR > 160*DPR) n.pulseActive = false;
+        }
+      }
+
+      // Draw node with cursor proximity brightness
+      const closeM = tmx>-9000 ? Math.max(0, 1-Math.sqrt(d2)/(220*DPR)) : 0;
+      const nodeAlpha = Math.min(0.95, n.alpha + closeM * 0.4);
+      const nodeR = n.r + closeM * 1.2*DPR;
+
+      // Outer glow for brighter nodes
+      if(n.type > 0){
+        const glowR = nodeR * (n.type===2 ? 4 : 2.5);
+        const grd = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,glowR);
+        grd.addColorStop(0, `rgba(41,190,156,${nodeAlpha*0.25})`);
+        grd.addColorStop(1, 'rgba(41,190,156,0)');
+        ctx.beginPath();
+        ctx.arc(n.x,n.y,glowR,0,Math.PI*2);
+        ctx.fillStyle=grd;
+        ctx.fill();
+      }
+
+      // Core dot
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, nodeR, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(41,190,156,${nodeAlpha})`;
+      ctx.fill();
     }
   }
   frame();
@@ -930,7 +1053,7 @@ function fallbackReveals(){
   window.bindCursor = bind;
 })();
 
-/* ─── Magnetic hover glow ─── */
+/* ─── Magnetic hover glow on pillar cards ─── */
 document.querySelectorAll('.p-cell').forEach(c=>{
   c.addEventListener('mousemove', e=>{
     const r = c.getBoundingClientRect();
@@ -938,6 +1061,38 @@ document.querySelectorAll('.p-cell').forEach(c=>{
     c.style.setProperty('--my', ((e.clientY-r.top)/r.height*100)+'%');
   });
 });
+
+/* ─── Magnetic buttons ─── */
+(function(){
+  // Only on desktop — magnetic effect needs a precise cursor
+  if(window.matchMedia('(max-width:768px)').matches) return;
+
+  function applyMagnetic(el, strength){
+    if(!el) return;
+    el.addEventListener('mousemove', e=>{
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width/2;
+      const cy = r.top  + r.height/2;
+      const dx = (e.clientX - cx) * strength;
+      const dy = (e.clientY - cy) * strength;
+      el.style.transform = `translate(${dx}px,${dy}px)`;
+    });
+    el.addEventListener('mouseleave', ()=>{
+      el.style.transform = '';
+      el.style.transition = 'transform .5s cubic-bezier(.16,1,.3,1)';
+      setTimeout(()=>{ el.style.transition=''; }, 500);
+    });
+  }
+
+  // Primary CTA — strongest pull
+  document.querySelectorAll('.btn-p').forEach(el => applyMagnetic(el, 0.35));
+  // Ghost buttons — medium pull
+  document.querySelectorAll('.btn-g').forEach(el => applyMagnetic(el, 0.25));
+  // Top bar CTA
+  document.querySelectorAll('.top-cta').forEach(el => applyMagnetic(el, 0.30));
+  // Nav links — subtle
+  document.querySelectorAll('.top-r a').forEach(el => applyMagnetic(el, 0.20));
+})();
 
 /* ─── Page routing ─── */
 function goPage(p){
